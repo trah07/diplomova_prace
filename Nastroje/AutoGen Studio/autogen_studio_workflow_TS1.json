@@ -1,0 +1,322 @@
+{
+  "provider": "autogen_agentchat.teams.SelectorGroupChat",
+  "component_type": "team",
+  "sequential": true,
+  "version": 1,
+  "component_version": 1,
+  "description": "Tým agentů pro tvorbu testů s validací a pokrytím, včetně reportu a ověřování. Uživatel validuje po každém kroku kromě coverage. Po reportu uživatel volí KONEC nebo pokračování.",
+  "label": "CI/CD Thesis Case",
+  "config": {
+    "participants": [
+      {
+        "provider": "autogen_agentchat.agents.UserProxyAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "Uživatelský vstup a validace.",
+        "label": "Uzivatelsky_Vstup",
+        "config": {
+          "name": "Agent_Uzivatel",
+          "description": "Zadává specifikaci/dokumentaci a schvaluje výstupy, na konci rozhoduje o ukončení."
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "Tester připraví testovací scénáře ve formátu markdown tabulky a čeká na validaci.",
+        "label": "Tester",
+        "config": {
+          "name": "Agent_Tester",
+          "description": "Tvoří testovací scénáře, formátuje je do markdown tabulky a čeká na schválení.",
+          "system_message": "Jsi tester. Na základě uživatelského vstupu připrav testovací scénáře. Výstup vždy formátuj jako markdown tabulku s unikátními ID jednotlivých testů, názvy, popisy testů, kroky a očekávání. Po každém výstupu čekej na uživatelskou validaci: pokud uživatel řekne NEOK, uprav scénáře, pokud OK, pokračuj dál.",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Google Gemini 3 Flash Preview (OpenAI-compatible endpoint)",
+            "label": "Gemini 3 Flash Preview",
+            "config": {
+              "model": "gemini-3-flash-preview",
+              "api_key": "${API_KEY}",
+              "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+              "model_info": {
+                "vision": true,
+                "function_calling": true,
+                "json_output": true,
+                "family": "unknown",
+                "structured_output": true
+              }
+            }
+          },
+          "tools": [],
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "none"
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "Agent Gherkin připraví gherkin scénáře a čeká na validaci.",
+        "label": "Agent_Gherkin",
+        "config": {
+          "name": "Agent_Gherkin",
+          "description": "Na základě testovacích scénářů připrav gherkin scénáře. Po každém výstupu čekej na validaci uživatele (OK/NEOK).",
+          "system_message": "Jsi expert na tvorbu Gherkin scénářů. Převáděj testovací scénáře do Gherkin syntaxe (Feature, Scenario, Given, When, Then, And). Každý scénář musí mít jasné ID odpovídající ID z tabulky scénářů. Po dokončení předlož uživateli ke schválení. Pokud uživatel řekne NEOK, uprav scénáře.",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Google Gemini 3 Flash Preview (OpenAI-compatible endpoint)",
+            "label": "Gemini 3 Flash Preview",
+            "config": {
+              "model": "gemini-3-flash-preview",
+              "api_key": "${API_KEY}",
+              "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+              "model_info": {
+                "vision": true,
+                "function_calling": true,
+                "json_output": true,
+                "family": "unknown",
+                "structured_output": true
+              }
+            }
+          },
+          "tools": [],
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "none"
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "Agent převede schválené Gherkin scénáře do Robot Framework syntaxe bez uživatelské validace.",
+        "label": "Agent_GherkinToRobot",
+        "config": {
+          "name": "Agent_GherkinToRobot",
+          "description": "Automaticky převede schválené Gherkin scénáře do Robot Framework Browser testů. Nevyžaduje uživatelskou validaci, výsledek předá Agent_RobotFramework ke kontrole.",
+          "system_message": "Jsi specialista na převod Gherkin scénářů do Robot Framework. Vezmi schválené Gherkin scénáře a automaticky je převeď do Robot Framework syntaxe s knihovnou Browser. Pravidla převodu: Given → sekce Keywords nebo přímé kroky, When → akce (Click, Fill Text, Select Options atd.), Then → aserce (Get Text, Get Element atd. s Should Be Equal / Should Contain). Výstup musí obsahovat sekce *** Settings *** (s Library Browser), *** Variables ***, *** Test Cases *** a *** Keywords ***. Každý Gherkin Scenario odpovídá jednomu Test Case. Nevyžaduj uživatelskou validaci — výsledek automaticky předej dál k revizi Agent_RobotFramework.",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Google Gemini 3 Flash Preview (OpenAI-compatible endpoint)",
+            "label": "Gemini 3 Flash Preview",
+            "config": {
+              "model": "gemini-3-flash-preview",
+              "api_key": "${API_KEY}",
+              "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+              "model_info": {
+                "vision": true,
+                "function_calling": true,
+                "json_output": true,
+                "family": "unknown",
+                "structured_output": true
+              }
+            }
+          },
+          "tools": [],
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "none"
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "Agent Robot Framework reviduje a dolaďuje Robot Framework testy a čeká na validaci uživatele.",
+        "label": "Agent_RobotFramework",
+        "config": {
+          "name": "Agent_RobotFramework",
+          "description": "Reviduje a dolaďuje Robot Framework Browser testy vygenerované Agent_GherkinToRobot a čeká na validaci uživatele.",
+          "system_message": "Jsi senior inženýr automatizace specializovaný na Robot Framework. Dostaneš Robot Framework testy vygenerované automatickým převodem z Gherkinu. Tvým úkolem je je zkontrolovat, opravit případné chyby, doplnit chybějící Keywords, ověřit správnost selektorů a zajistit, že testy jsou spustitelné. Používej knihovnu Browser (robotframework-browser). Po dokončení revize předlož výsledek uživateli ke schválení. Pokud uživatel řekne NEOK, uprav testy podle jeho připomínek.",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Google Gemini 3 Flash Preview (OpenAI-compatible endpoint)",
+            "label": "Gemini 3 Flash Preview",
+            "config": {
+              "model": "gemini-3-flash-preview",
+              "api_key": "${API_KEY}",
+              "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+              "model_info": {
+                "vision": true,
+                "function_calling": true,
+                "json_output": true,
+                "family": "unknown",
+                "structured_output": true
+              }
+            }
+          },
+          "tools": [],
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "none"
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "Agent GitHub Actions vygeneruje CI/CD workflow YAML na základě Robot Framework testů a čeká na validaci.",
+        "label": "Agent_GitHub_Actions",
+        "config": {
+          "name": "Agent_GitHub_Actions",
+          "description": "Na základě schválených Robot Framework testů vygeneruj GitHub Actions workflow YAML. Po každém výstupu čekej na validaci uživatele (OK/NEOK).",
+          "system_message": "Jsi expert na CI/CD a GitHub Actions. Na základě schválených Robot Framework Browser testů vygeneruj kompletní GitHub Actions workflow YAML soubor. Workflow musí obsahovat: trigger (push/pull_request na main), správné prostředí (ubuntu-latest, Python), instalaci závislostí (pip install robotframework robotframework-browser), inicializaci Browser knihovny (rfbrowser init), spuštění testů (robot --outputdir results tests/), a upload artefaktů (results/) při selhání i úspěchu. Výstup formátuj jako YAML kód připravený k umístění do .github/workflows/robot-tests.yml. Po dokončení předlož uživateli ke schválení. Pokud uživatel řekne NEOK, uprav workflow.",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Google Gemini 3 Flash Preview (OpenAI-compatible endpoint)",
+            "label": "Gemini 3 Flash Preview",
+            "config": {
+              "model": "gemini-3-flash-preview",
+              "api_key": "${API_KEY}",
+              "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+              "model_info": {
+                "vision": true,
+                "function_calling": true,
+                "json_output": true,
+                "family": "unknown",
+                "structured_output": true
+              }
+            }
+          },
+          "tools": [],
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "none"
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "Coverage analytik zkontroluje pokrytí požadavků na základě testů a scénářů, nečeká na uživatele.",
+        "label": "Coverage_Analytik",
+        "config": {
+          "name": "Agent_Coverage",
+          "description": "Analyzuje testy a scénáře, zda jsou pokryté všechny požadavky. Nevyžaduje uživatelskou validaci, pouze vrací odpověď.",
+          "system_message": "Jsi Coverage analytik. Na základě testovacích scénářů a Robot Framework Browser testů analyzuj pokrytí požadavků. Nevyžaduj uživatelskou validaci. Výsledek ulož do konverzace a pokračuj.",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Google Gemini 3 Flash Preview (OpenAI-compatible endpoint)",
+            "label": "Gemini 3 Flash Preview",
+            "config": {
+              "model": "gemini-3-flash-preview",
+              "api_key": "${API_KEY}",
+              "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+              "model_info": {
+                "vision": true,
+                "function_calling": true,
+                "json_output": true,
+                "family": "unknown",
+                "structured_output": true
+              }
+            }
+          },
+          "tools": [],
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "none"
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "Agent reporter vytváří závěrečnou zprávu a čeká na uživatelskou validaci ukončení nebo pokračování.",
+        "label": "Agent_Reporter",
+        "config": {
+          "name": "Agent_Reporter",
+          "description": "Na základě všech informací vytvoř závěrečnou zprávu. Pošle ji uživateli a čeká na vstup. Pokud uživatel napíše 'KONEC', ukonči flow, jinak pokračuj.",
+          "system_message": "Jsi agent Reporter. Shromáždi všechny informace z předchozích kroků (testy, Gherkin scénáře, Robot Framework testy, GitHub Actions workflow, pokrytí). Vytvoř srozumitelnou závěrečnou zprávu. Pošli ji uživateli a poté vyčkej na jeho vstup. Pokud uživatel odpoví 'KONEC', ukonči proces, jinak pokračuj podle uživatelského požadavku. Musíš tedy uživateli nabídnout možnost odpovědět (OK/NEOK) nebo KONEC.",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Google Gemini 3 Flash Preview (OpenAI-compatible endpoint)",
+            "label": "Gemini 3 Flash Preview",
+            "config": {
+              "model": "gemini-3-flash-preview",
+              "api_key": "${API_KEY}",
+              "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+              "model_info": {
+                "vision": true,
+                "function_calling": true,
+                "json_output": true,
+                "family": "unknown",
+                "structured_output": true
+              }
+            }
+          },
+          "tools": [],
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "none"
+        }
+      }
+    ],
+    "termination_condition": {
+      "provider": "autogen_agentchat.base.OrTerminationCondition",
+      "component_type": "termination",
+      "version": 1,
+      "component_version": 1,
+      "label": "OrTerminationCondition",
+      "config": {
+        "conditions": [
+          {
+            "provider": "autogen_agentchat.conditions.TextMentionTermination",
+            "component_type": "termination",
+            "version": 1,
+            "component_version": 1,
+            "description": "Konverzace končí při uživatelském zadání hodnoty 'KONEC'.",
+            "label": "TextMentionTermination",
+            "config": {
+              "text": "KONEC"
+            }
+          }
+        ]
+      }
+    },
+    "selector_prompt": "Tým expertů na testování softwaru. Role v týmu: {roles}.\n\nPostup:\n1. Uživatelský vstup zadá specifikaci/dokumentaci.\n2. Tester připraví testovací scénáře na základě specifikace, výstup ve formě markdown tabulky.\n3. Uživatel validuje Testerovy scénáře (OK/NEOK).\n4. Agent Gherkin převede scénáře do Gherkin formátu.\n5. Uživatel validuje Gherkin scénáře (OK/NEOK).\n6. Agent GherkinToRobot automaticky převede schválené Gherkin scénáře do Robot Framework syntaxe (bez uživatelské validace).\n7. Agent RobotFramework reviduje a doladí vygenerované testy.\n8. Uživatel validuje Robot Framework testy (OK/NEOK).\n9. Agent GitHub Actions vygeneruje CI/CD workflow YAML na základě schválených Robot Framework testů.\n10. Uživatel validuje GitHub Actions workflow (OK/NEOK).\n11. Coverage analytik zhodnotí pokrytí všech požadavků bez uživatelské validace.\n12. Agent Reporter vytvoří závěrečnou zprávu a čeká na uživatelskou validaci ukončení.\n\nPokud uživatel napíše 'NEOK', aktuální krok se opakuje. Pokud vše schválí OK, zadá 'KONEC' pro ukončení. Musíš nabídnout uživateli možnost odpovědět.\n\nNa základě historie vyber, kdo má mluvit dál:\n\n{history}\n\nVyber dalšího mluvčího z {participants}. VRAŤ POUZE LABEL ROLE.",
+    "allow_repeated_speaker": true,
+    "max_selector_attempts": 3,
+    "model_client": {
+      "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+      "component_type": "model",
+      "version": 1,
+      "component_version": 1,
+      "description": "Google Gemini 3 Flash Preview (OpenAI-compatible endpoint)",
+      "label": "Gemini 3 Flash Preview",
+      "config": {
+        "model": "gemini-3-flash-preview",
+        "api_key": "${API_KEY}",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+        "model_info": {
+          "vision": true,
+          "function_calling": true,
+          "json_output": true,
+          "family": "unknown",
+          "structured_output": true
+        }
+      }
+    }
+  }
+}

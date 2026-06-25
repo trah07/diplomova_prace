@@ -16,7 +16,7 @@ Předpoklady: Uživatel je přihlášen do aplikace.
 
 Postup:
 1. Otevřít záložku „Vyhledávání LV" a zvolit podzáložku „podle čísla LV".
-2. Vyplnit platné pole „Katastrální území" a pole „Číslo LV" neplatným číslem.
+2. Vyplnit platné pole „Katastrální území" a pole „Číslo LV" neplatnými hodnoty.
 3. Spustit vyhledání a stažení LV.
 
 Očekávaný výsledek: Aplikace zobrazí chybovou hlášku nebo informaci o nenalezení záznamu a stažení neproběhne.
