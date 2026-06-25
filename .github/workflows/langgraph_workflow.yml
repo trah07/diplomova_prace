@@ -21,7 +21,7 @@ jobs:
         id: RF_Run
         uses: csas-actions/robotframework-run@v1
         with:
-          inputdir: "./Tests/AutoGen/*.robot"
+          inputdir: "./Tests/LangGraph/*.robot"
 
       - name: Generate RF Summary
         if: success() || failure()

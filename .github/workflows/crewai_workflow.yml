@@ -2,7 +2,7 @@ name: Knproxy_AutoGen_Studio_PRS
 
 on:
   schedule:
-    - cron: "0 15 * * *"
+      - cron: '0 15 * * *'
   workflow_dispatch:
 
 jobs:
@@ -21,11 +21,11 @@ jobs:
         id: RF_Run
         uses: csas-actions/robotframework-run@v1
         with:
-          inputdir: "./Tests/AutoGen/*.robot"
+          inputdir: './Tests/CrewAI/*.robot'
 
       - name: Generate RF Summary
         if: success() || failure()
         id: RF_Summary
         uses: csas-actions/robotframework-summary@v1
         with:
-          results_dir: "Results"
+          results_dir: 'Results'
