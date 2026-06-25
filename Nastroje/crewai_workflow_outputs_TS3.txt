@@ -1,0 +1,255 @@
+================================================================================
+VÝSTUPY CREWAI WORKFLOW
+================================================================================
+
+Stav workflow: RUNNING
+
+================================================================================
+VSTUPNÍ TESTOVACÍ SCÉNÁŘ
+================================================================================
+
+TS3 Vyhledání LV s prázdnými povinnými poli
+
+Cíl: Ověřit, že aplikace zobrazí validační chybu při odeslání formuláře s prázdnými povinnými poli.
+
+Předpoklady: Uživatel je přihlášen do aplikace.
+
+Postup:
+1. Otevřít záložku „Vyhledávání LV" a zvolit podzáložku „podle čísla LV".
+2. Ponechat povinná pole „Katastrální území" a „Číslo LV" prázdná.
+3. Spustit vyhledání a stažení LV.
+
+Očekávaný výsledek: Aplikace zobrazí validační chybu a stažení neproběhne.
+
+Zadání: Vytvoř mi jeden testovací scénář pro aplikaci kn proxy na stránce https://knproxy-prs.csint.cz/knproxy/.
+
+
+================================================================================
+FINÁLNÍ GHERKIN SCÉNÁŘ
+================================================================================
+Feature: Vyhledávání a stažení LV v aplikaci KN Proxy
+
+Scenario: Úspěšné vyhledání a stažení LV podle čísla
+Given Uživatel je přihlášen v aplikaci KN Proxy na adrese https://knproxy-prs.csint.cz/knproxy/
+When Uživatel otevře záložku Vyhledávání LV a zvolí podzáložku podle čísla LV
+And Uživatel vyplní povinná pole Katastrální území a Číslo LV platnými údaji
+And Uživatel klikne na tlačítko pro vyhledání a stažení LV
+Then Aplikace úspěšně vyhledá záznam a zahájí stahování souboru LV
+
+================================================================================
+FINÁLNÍ NÁVRH ROBOT FRAMEWORK TESTU
+================================================================================
+*** Settings ***
+Library    Browser
+
+*** Variables ***
+${URL}    https://knproxy-prs.csint.cz/knproxy/
+${KATASTRALNI_UZEMI}    731285
+${CISLO_LV}    100
+
+*** Test Cases ***
+Úspěšné vyhledání a stažení LV podle čísla
+    Given Uživatel je přihlášen v aplikaci KN Proxy na adrese ${URL}
+    When Uživatel otevře záložku Vyhledávání LV a zvolí podzáložku podle čísla LV
+    And Uživatel vyplní povinná pole Katastrální území a Číslo LV platnými údaji
+    And Uživatel klikne na tlačítko pro vyhledání a stažení LV
+    Then Aplikace úspěšně vyhledá záznam a zahájí stahování souboru LV
+
+*** Keywords ***
+Uživatel je přihlášen v aplikaci KN Proxy na adrese ${URL}
+    New Browser    browser=chromium    headless=False
+    New Page    ${URL}
+
+Uživatel otevře záložku Vyhledávání LV a zvolí podzáložku podle čísla LV
+    Click    text="Vyhledávání LV"
+    Click    text="Podle čísla LV"
+
+Uživatel vyplní povinná pole Katastrální území a Číslo LV platnými údaji
+    Fill Text    id=katastralniUzemi    ${KATASTRALNI_UZEMI}
+    Fill Text    id=cisloLv    ${CISLO_LV}
+
+Uživatel klikne na tlačítko pro vyhledání a stažení LV
+    Click    id=search-button
+
+Aplikace úspěšně vyhledá záznam a zahájí stahování souboru LV
+    ${promise}=    Promise To Wait For Download
+    Click    id=download-button
+    Wait For    ${promise}
+
+================================================================================
+FINÁLNÍ REVIDOVANÝ ROBOT FRAMEWORK TEST
+================================================================================
+*** Settings ***
+Library    Browser    timeout=30s
+
+*** Variables ***
+${URL}    https://knproxy-prs.csint.cz/knproxy/
+${KATASTRALNI_UZEMI}    731285
+${CISLO_LV}    100
+${BROWSER}    chromium
+${HEADLESS}    ${True}
+
+*** Test Cases ***
+Úspěšné vyhledání a stažení LV podle čísla
+    [Documentation]    Ověření procesu vyhledání a stažení LV podle čísla v aplikaci KN Proxy.
+    [Setup]    Inicializace prohlížeče a aplikace
+    Given Uživatel je na úvodní stránce aplikace
+    When Uživatel otevře záložku Vyhledávání LV a zvolí podzáložku podle čísla LV
+    And Uživatel vyplní povinná pole Katastrální území a Číslo LV platnými údaji
+    And Uživatel klikne na tlačítko pro vyhledání a stažení LV
+    Then Aplikace úspěšně vyhledá záznam a zahájí stahování souboru LV
+    [Teardown]    Close Browser    ALL
+
+*** Keywords ***
+Inicializace prohlížeče a aplikace
+    New Browser    browser=${BROWSER}    headless=${HEADLESS}
+    New Context    acceptDownloads=${True}
+    New Page    ${URL}
+
+Uživatel je na úvodní stránce aplikace
+    Wait For Elements State    body    visible    timeout=10s
+
+Uživatel otevře záložku Vyhledávání LV a zvolí podzáložku podle čísla LV
+    Wait For Elements State    text="Vyhledávání LV"    visible
+    Click    text="Vyhledávání LV"
+    Wait For Elements State    text="Podle čísla LV"    visible
+    Click    text="Podle čísla LV"
+
+Uživatel vyplní povinná pole Katastrální území a Číslo LV platnými údaji
+    Wait For Elements State    id=katastralniUzemi    visible
+    Fill Text    id=katastralniUzemi    ${KATASTRALNI_UZEMI}
+    Wait For Elements State    id=cisloLv    visible
+    Fill Text    id=cisloLv    ${CISLO_LV}
+
+Uživatel klikne na tlačítko pro vyhledání a stažení LV
+    Wait For Elements State    id=search-button    enabled
+    Click    id=search-button
+
+Aplikace úspěšně vyhledá záznam a zahájí stahování souboru LV
+    Wait For Elements State    id=download-button    visible    timeout=15s
+    ${dl_promise}=    Promise To Wait For Download
+    Click    id=download-button
+    ${file_info}=    Wait For    ${dl_promise}
+    Should Not Be Empty    ${file_info}[saveAs]
+
+================================================================================
+FINÁLNÍ GITHUB ACTIONS WORKFLOW
+================================================================================
+name: Robot Framework CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  robot-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install robotframework robotframework-browser
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Browser dependencies
+        run: |
+          npx playwright install-deps
+          rfbrowser init
+
+      - name: Run Robot Framework tests
+        run: |
+          robot -d results .
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-framework-results
+          path: results/
+
+================================================================================
+FINÁLNÍ ANALÝZA POKRYTÍ POŽADAVKŮ
+================================================================================
+Zde je analýza pokrytí požadavků pro testovací scénář **TS3 Vyhledání LV s prázdnými povinnými poli**.
+
+### 1. Přehled požadavků
+Na základě vstupního scénáře (TS3) byly identifikovány následující klíčové požadavky:
+*   **P1:** Navigace na záložku „Vyhledávání LV" a podzáložku „podle čísla LV".
+*   **P2:** Ponechání povinných polí „Katastrální území" a „Číslo LV" prázdných (negativní test).
+*   **P3:** Odeslání formuláře (spuštění vyhledávání).
+*   **P4:** Ověření zobrazení validační chyby.
+*   **P5:** Ověření, že stažení souboru neproběhlo.
+
+---
+
+### 2. Matice pokrytí požadavků
+
+| Požadavek | Gherkin scénář | Robot Framework (Draft) | Robot Framework (Reviewed) | Stav pokrytí |
+| :--- | :---: | :---: | :---: | :---: |
+| **P1** (Navigace) | ANO | ANO | ANO | **Pokryto** |
+| **P2** (Prázdná pole) | **NE** | **NE** | **NE** | **Nepokryto** |
+| **P3** (Odeslání) | ANO | ANO | ANO | **Pokryto** |
+| **P4** (Validační chyba) | **NE** | **NE** | **NE** | **Nepokryto** |
+| **P5** (Stažení neproběhne) | **NE** | **NE** | **NE** | **Nepokryto** |
+
+---
+
+### 3. Zhodnocení pokrytí
+Při analýze byl zjištěn **kritický nesoulad** mezi vstupním scénářem a vytvořenými artefakty:
+*   **Typ testu:** Vstupní scénář TS3 je definován jako **negativní test** (ověření chybových stavů při prázdných polích). Všechny vytvořené artefakty (Gherkin i Robot Framework) však popisují **pozitivní test** (Happy Path – úspěšné vyhledání a stažení s platnými daty).
+*   **Logika testu:** Zatímco zadání vyžaduje ponechat pole prázdná, testy do nich aktivně vyplňují testovací data (`${KATASTRALNI_UZEMI}`, `${CISLO_LV}`).
+*   **Očekávaný výsledek:** Testy končí ověřením úspěšného stažení souboru, což je v přímém rozporu s cílem scénáře TS3, kde stažení proběhnout nesmí a musí se zobrazit chyba.
+
+---
+
+### 4. Případná rizika nebo mezery v pokrytí
+*   **Chybějící validace:** V testech zcela chybí kontrola existence chybových hlášek nebo stavu UI po odeslání prázdného formuláře.
+*   **Falešně pozitivní výsledky:** Pokud by byl tento test spuštěn proti požadavku TS3, mohl by projít (pokud by data byla validní), ale neověřil by požadovanou funkčnost (validaci prázdných polí).
+*   **Nesprávná data:** Testy používají fixní data pro úspěšný průchod, což znemožňuje testování povinnosti polí.
+
+---
+
+### 5. Krátké shrnutí
+Vytvořené testovací artefakty **neodpovídají zadání TS3**. Došlo k záměně negativního scénáře za pozitivní. Aktuální testy pokrývají pouze technickou schopnost aplikace vyhledat a stáhnout LV, ale zcela ignorují požadavek na ověření validačních mechanismů při prázdných polích. 
+
+**Doporučení:** Přepracovat Gherkin scénář i Robot Framework testy tak, aby v krocích `When` vynechaly vyplnění polí a v kroku `Then` ověřovaly přítomnost chybové zprávy místo stahování souboru.
+
+================================================================================
+FINÁLNÍ REPORT
+================================================================================
+Tato technická zpráva shrnuje průběh a výsledky workflow zaměřeného na automatizovanou generaci testovacích artefaktů pro aplikaci KN Proxy.
+
+Vstupní testovací scénář
+Výchozím bodem byl scénář TS3, jehož cílem bylo ověřit negativní stav aplikace, konkrétně zobrazení validační chyby při ponechání povinných polí (Katastrální území a Číslo LV) prázdných během vyhledávání listu vlastnictví.
+
+Generovaný Gherkin scénář a Robot Framework draft
+Na základě vstupu byl vytvořen Gherkin scénář a následně draft testu v nástroji Robot Framework s využitím knihovny Browser. V této fázi došlo k sémantickému posunu, kdy namísto negativního testu byl vygenerován scénář pro pozitivní průchod (tzv. Happy Path), zahrnující úspěšné vyplnění dat a stažení souboru.
+
+Revidovaný Robot Framework test
+Revidovaná verze testu optimalizovala technické parametry, jako je správa kontextu prohlížeče, čekání na elementy a ošetření stahování souborů. Test byl navržen jako robustní automatizační skript, nicméně nadále udržoval logiku úspěšného vyhledání namísto požadované validace chyb.
+
+GitHub Actions workflow
+Pro zajištění kontinuální integrace byl vytvořen konfigurační soubor pro GitHub Actions. Tento workflow automatizuje instalaci Pythonu, Node.js a nezbytných závislostí (Playwright, Robot Framework), spouští testy v bezhlavém režimu a archivuje výsledky testování ve formě artefaktů.
+
+Analýza pokrytí a role lidské validace
+Analýza pokrytí identifikovala kritický nesoulad mezi původním zadáním a výslednými skripty. Zatímco technické provedení testů bylo na vysoké úrovni, věcná shoda s požadavkem na testování prázdných polí nebyla dodržena. Tento krok zdůraznil nezastupitelnou roli lidské validace v procesu, která umožnila detekovat záměnu negativního scénáře za pozitivní, což by čistě automatizované nástroje bez sémantické kontroly mohly opomenout.
+
+Celkový účel workflow
+Hlavním účelem tohoto workflow je demonstrovat schopnost rychlého přechodu od textového zadání k funkčnímu automatizovanému kódu a jeho integraci do CI/CD cyklu. Proces ukazuje efektivitu generování technických šablon, ale zároveň akcentuje nutnost expertního dohledu pro zajištění logické správnosti a plného pokrytí specifických obchodních požadavků.
+

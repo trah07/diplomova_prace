@@ -1,0 +1,32 @@
+flowchart TD
+    START([START]) --> Agent_Gherkin[Agent_Gherkin]
+    Agent_Gherkin --> Human_Gherkin{Human validation
+OK / NEOK / KONEC}
+    Human_Gherkin -->|OK| Agent_GherkinToRobot[Agent_GherkinToRobot]
+    Human_Gherkin -->|NEOK| Agent_Gherkin
+    Human_Gherkin -->|KONEC| END([END])
+
+    Agent_GherkinToRobot --> Human_Robot{Human validation
+OK / NEOK / KONEC}
+    Human_Robot -->|OK| Agent_RobotFramework[Agent_RobotFramework]
+    Human_Robot -->|NEOK| Agent_GherkinToRobot
+    Human_Robot -->|KONEC| END
+
+    Agent_RobotFramework --> Human_ReviewedRobot{Human validation
+OK / NEOK / KONEC}
+    Human_ReviewedRobot -->|OK| Agent_GitHub_Actions[Agent_GitHub_Actions]
+    Human_ReviewedRobot -->|NEOK| Agent_RobotFramework
+    Human_ReviewedRobot -->|KONEC| END
+
+    Agent_GitHub_Actions --> Human_GitHub{Human validation
+OK / NEOK / KONEC}
+    Human_GitHub -->|OK| Agent_Coverage[Agent_Coverage]
+    Human_GitHub -->|NEOK| Agent_GitHub_Actions
+    Human_GitHub -->|KONEC| END
+
+    Agent_Coverage --> Agent_Reporter[Agent_Reporter]
+    Agent_Reporter --> Human_Report{Human validation
+OK / NEOK / KONEC}
+    Human_Report -->|OK| END
+    Human_Report -->|NEOK| Agent_Reporter
+    Human_Report -->|KONEC| END

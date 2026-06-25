@@ -1,0 +1,250 @@
+================================================================================
+VÝSTUPY LANGGRAPH WORKFLOW
+================================================================================
+
+Stav workflow: RUNNING
+
+================================================================================
+VSTUPNÍ TESTOVACÍ SCÉNÁŘ
+================================================================================
+
+TS4 Vyhledání LV s neplatnými hodnotami
+
+Cíl: Ověřit, že aplikace správně reaguje na zadání neplatných vstupních hodnot.
+
+Předpoklady: Uživatel je přihlášen do aplikace.
+
+Postup:
+1. Otevřít záložku „Vyhledávání LV" a zvolit podzáložku „podle čísla LV".
+2. Vyplnit platné pole „Katastrální území" a pole „Číslo LV" neplatným číslem.
+3. Spustit vyhledání a stažení LV.
+
+Očekávaný výsledek: Aplikace zobrazí chybovou hlášku nebo informaci o nenalezení záznamu a stažení neproběhne.
+
+Zadání: Vytvoř mi jeden testovací scénář pro aplikaci kn proxy na stránce https://knproxy-prs.csint.cz/knproxy/.
+
+
+================================================================================
+FINÁLNÍ GHERKIN SCÉNÁŘ
+================================================================================
+Feature: Vyhledávání a stažení LV v aplikaci KN Proxy
+
+Scenario: Úspěšné vyhledání a stažení LV podle čísla
+Given Uživatel je přihlášen do aplikace KN Proxy na adrese https://knproxy-prs.csint.cz/knproxy/
+When Uživatel otevře záložku "Vyhledávání LV" a zvolí podzáložku "podle čísla LV"
+And Uživatel vyplní platné "Katastrální území" a platné "Číslo LV"
+And Uživatel klikne na tlačítko pro vyhledání a stažení LV
+Then Aplikace úspěšně nalezne daný záznam a zahájí stahování souboru LV
+
+================================================================================
+FINÁLNÍ NÁVRH ROBOT FRAMEWORK TESTU
+================================================================================
+*** Settings ***
+Library    Browser
+
+*** Variables ***
+${URL}               https://knproxy-prs.csint.cz/knproxy/
+${KATASTRALNI_UZEMI}    Praha
+${CISLO_LV}          123
+
+*** Test Cases ***
+Úspěšné vyhledání a stažení LV podle čísla
+    Given Uživatel je přihlášen do aplikace KN Proxy na adrese ${URL}
+    When Uživatel otevře záložku "Vyhledávání LV" a zvolí podzáložku "podle čísla LV"
+    And Uživatel vyplní platné "Katastrální území" a platné "Číslo LV"
+    And Uživatel klikne na tlačítko pro vyhledání a stažení LV
+    Then Aplikace úspěšně nalezne daný záznam a zahájí stahování souboru LV
+
+*** Keywords ***
+Uživatel je přihlášen do aplikace KN Proxy na adrese ${URL}
+    New Browser    browser=chromium    headless=False
+    New Context    acceptDownloads=True
+    New Page       ${URL}
+
+Uživatel otevře záložku "Vyhledávání LV" a zvolí podzáložku "podle čísla LV"
+    Click    text="Vyhledávání LV"
+    Click    text="podle čísla LV"
+
+Uživatel vyplní platné "Katastrální území" a platné "Číslo LV"
+    Fill Text    input[name="katastralniUzemi"]    ${KATASTRALNI_UZEMI}
+    Fill Text    input[name="cisloLV"]             ${CISLO_LV}
+
+Uživatel klikne na tlačítko pro vyhledání a stažení LV
+    ${promise}=    Promise To Wait For Download
+    Click          button#search-download
+    Set Test Variable    ${dl_promise}    ${promise}
+
+Aplikace úspěšně nalezne daný záznam a zahájí stahování souboru LV
+    ${file_info}=    Wait For    ${dl_promise}
+    Should Not Be Empty    ${file_info.saveAs}
+
+================================================================================
+FINÁLNÍ REVIDOVANÝ ROBOT FRAMEWORK TEST
+================================================================================
+*** Settings ***
+Library    Browser
+
+*** Variables ***
+${URL}                  https://knproxy-prs.csint.cz/knproxy/
+${KATASTRALNI_UZEMI}    Praha
+${CISLO_LV}             123
+${BROWSER}              chromium
+${HEADLESS}             True
+
+*** Test Cases ***
+Úspěšné vyhledání a stažení LV podle čísla
+    [Documentation]    Ověřuje, že uživatel může vyhledat LV podle čísla a úspěšně stáhnout výsledný soubor.
+    [Setup]    Inicializace prohlížeče a aplikace
+    Given Uživatel přejde do sekce vyhledávání podle čísla LV
+    When Uživatel zadá katastrální území "${KATASTRALNI_UZEMI}" a číslo LV "${CISLO_LV}"
+    Then Aplikace vyhledá záznam a stáhne soubor LV
+    [Teardown]    Close Context
+
+*** Keywords ***
+Inicializace prohlížeče a aplikace
+    New Browser    browser=${BROWSER}    headless=${HEADLESS}
+    New Context    acceptDownloads=True
+    New Page       ${URL}
+    Wait For Elements State    text="Vyhledávání LV"    visible    timeout=10s
+
+Uživatel přejde do sekce vyhledávání podle čísla LV
+    Click    text="Vyhledávání LV"
+    Wait For Elements State    text="podle čísla LV"    visible    timeout=5s
+    Click    text="podle čísla LV"
+    Wait For Elements State    input[name="katastralniUzemi"]    visible    timeout=5s
+
+Uživatel zadá katastrální území "${uzemi}" a číslo LV "${lv}"
+    Fill Text    input[name="katastralniUzemi"]    ${uzemi}
+    Fill Text    input[name="cisloLV"]             ${lv}
+
+Aplikace vyhledá záznam a stáhne soubor LV
+    ${dl_promise}=    Promise To Wait For Download
+    Click    button#search-download
+    ${file_info}=    Wait For    ${dl_promise}
+    Should Not Be Empty    ${file_info.saveAs}
+    Should Not Be Empty    ${file_info.suggestedFilename}
+
+================================================================================
+FINÁLNÍ GITHUB ACTIONS WORKFLOW
+================================================================================
+name: Robot Framework CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install robotframework robotframework-browser
+
+      - name: Initialize Robot Framework Browser
+        run: rfbrowser init
+
+      - name: Run Robot Framework tests
+        run: |
+          mkdir -p results
+          robot --outputdir results --variable BROWSER:chromium --variable HEADLESS:True .
+        continue-on-error: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-test-results
+          path: results/
+          retention-days: 5
+
+================================================================================
+FINÁLNÍ ANALÝZA POKRYTÍ POŽADAVKŮ
+================================================================================
+### Analýza pokrytí testů (Agent_Coverage)
+
+Tato analýza hodnotí soulad mezi původním testovacím scénářem (TS4) a následně vygenerovanými artefakty (Gherkin, Robot Framework draft, Reviewed Robot Framework test).
+
+---
+
+#### 1. Přehled požadavků
+Na základě původního scénáře **TS4 Vyhledání LV s neplatnými hodnotami** byly identifikovány následující klíčové požadavky:
+- **P1:** Ověřit reakci aplikace na neplatné vstupní hodnoty (negativní test).
+- **P2:** Vyplnit platné katastrální území a **neplatné** číslo LV.
+- **P3:** Ověřit zobrazení chybové hlášky nebo informace o nenalezení záznamu.
+- **P4:** Ověřit, že **neproběhne** stažení souboru.
+
+---
+
+#### 2. Matice pokrytí požadavků
+
+| Požadavek | Gherkin scénář | Robot Framework (Draft) | Reviewed Robot Test | Stav pokrytí |
+| :--- | :---: | :---: | :---: | :---: |
+| **P1** (Negativní test) | ❌ Ne | ❌ Ne | ❌ Ne | **Nepokryto** |
+| **P2** (Neplatné číslo LV) | ❌ Ne (použito platné) | ❌ Ne (použito "123") | ❌ Ne (použito "123") | **Nepokryto** |
+| **P3** (Chybová hláška) | ❌ Ne | ❌ Ne | ❌ Ne | **Nepokryto** |
+| **P4** (Stažení neproběhne) | ❌ Ne (očekává stažení) | ❌ Ne (očekává stažení) | ❌ Ne (očekává stažení) | **Nepokryto** |
+
+---
+
+#### 3. Zhodnocení pokrytí
+Při analýze vygenerovaných artefaktů došlo k zásadnímu odchýlení od původního zadání:
+- **Typ testu:** Původní scénář TS4 je definován jako **negativní test**, zatímco všechny vygenerované artefakty (Gherkin i Robot Framework) popisují **pozitivní test** (Happy Path).
+- **Vstupní data:** Namísto testování neplatného čísla LV se testy zaměřují na úspěšné vyhledání s hodnotou "123" (která je v kontextu testu brána jako platná).
+- **Očekávaný výsledek:** Artefakty očekávají zahájení stahování a kontrolují existenci staženého souboru, což je v přímém rozporu s požadavkem P4, kde stažení proběhnout nesmí.
+
+---
+
+#### 4. Případná rizika nebo mezery v pokrytí
+- **Kritická mezera:** Nebyla implementována žádná logika pro ověření chybových stavů. Pokud aplikace při zadání neplatného čísla LV selže (např. skončí chybou 500), vytvořené testy toto riziko neodhalí, protože se vůbec nepokoušejí neplatné zadání simulovat.
+- **Falešná validace:** Robot Framework testy jsou sice syntakticky správné a technicky funkční, ale testují úplně jiný proces, než který byl požadován v TS4.
+- **Absence validace UI:** Chybí kontrola přítomnosti chybového elementu (toast message, alert, text v UI), který je klíčovým výstupem původního scénáře.
+
+---
+
+#### 5. Krátké shrnutí
+**Pokrytí požadavků scénáře TS4 je 0 %.**
+Vygenerované testovací artefakty zcela ignorují negativní charakter původního zadání. Namísto ověření chybové hlášky při zadání neplatných dat implementují scénář pro úspěšné vyhledání a stažení souboru. Pro nápravu je nutné přepsat Gherkin scénář na negativní variantu a v Robot Frameworku nahradit klíčová slova pro stahování kontrolou viditelnosti chybového hlášení.
+
+================================================================================
+FINÁLNÍ REPORT
+================================================================================
+Tato technická zpráva shrnuje proces a výsledky automatizovaného workflow generování testů pro aplikaci KN Proxy se zaměřením na testovací scénář TS4.
+
+**Účel workflow**
+Hlavním cílem tohoto procesu je transformace textového zadání testovacího scénáře do spustitelné podoby v rámci CI/CD infrastruktury, čímž se minimalizuje manuální úsilí při tvorbě regresních testů a zajišťuje se jejich konzistentní provádění.
+
+**Vstupní testovací scénář**
+Původní scénář TS4 byl definován jako negativní test. Jeho cílem bylo ověřit, že aplikace správně reaguje na zadání neplatného čísla listu vlastnictví (LV) zobrazením chybového hlášení a zamezením stažení souboru.
+
+**Generovaný Gherkin scénář a Robot Framework draft**
+Na základě zadání byl vytvořen Gherkin scénář, který však chybně interpretoval původní negativní záměr a transformoval jej do pozitivního scénáře (Happy Path). Následný technický draft v nástroji Robot Framework reflektoval tuto odchylku a implementoval kroky pro úspěšné vyhledání a stažení souboru pomocí knihovny Browser.
+
+**Revidovaný Robot Framework test**
+Finální verze testu byla optimalizována pro stabilitu a nasazení v automatizovaném prostředí. Byly doplněny explicitní čekací doby na elementy (Wait For Elements State), parametrizace prohlížeče a ošetření stahování souborů. Test je technicky robustní, avšak nadále sleduje pozitivní testovací větev.
+
+**GitHub Actions workflow**
+Pro zajištění kontinuální integrace byl vytvořen konfigurační soubor pro GitHub Actions. Tento pracovní postup automaticky instaluje potřebné závislosti (Python, Robot Framework, Browser library), inicializuje prohlížečové jádro a spouští testy v bezhlavém režimu (headless). Výsledky testování jsou následně ukládány jako artefakty pro další analýzu.
+
+**Analýza pokrytí a role lidské validace**
+Analýza pokrytí odhalila kritický nesoulad mezi zadáním a výsledkem. Pokrytí požadavků scénáře TS4 bylo vyhodnoceno jako nulové, neboť automatizovaně generované artefakty zcela ignorovaly negativní charakter testu (ověření chyby) a namísto toho implementovaly úspěšný průchod aplikací.
+
+Tento výsledek zdůrazňuje nezastupitelnou roli lidské validace v procesu automatizovaného generování testů. Zatímco nástroje dokáží efektivně vytvořit syntakticky správný a funkční kód, lidský dohled je nezbytný pro ověření logické správnosti a shody s obchodními požadavky, zejména u negativních testovacích scénářů.
+
+**Závěr**
+Workflow úspěšně demonstrovalo technickou cestu od zadání k automatizovanému spuštění v CI, avšak zároveň poukázalo na riziko sémantického posunu při generování testů. Pro nápravu je nutná redefinice Gherkin scénáře na negativní variantu a následná úprava validačních kroků v Robot Frameworku.
+

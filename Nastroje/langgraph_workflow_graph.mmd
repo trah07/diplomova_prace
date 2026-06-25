@@ -1,0 +1,43 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	agent_gherkin(agent_gherkin)
+	human_validation_gherkin(human_validation_gherkin)
+	agent_gherkin_to_robot(agent_gherkin_to_robot)
+	human_validation_robot(human_validation_robot)
+	agent_robot_framework(agent_robot_framework)
+	human_validation_reviewed_robot(human_validation_reviewed_robot)
+	agent_github_actions(agent_github_actions)
+	human_validation_github_actions(human_validation_github_actions)
+	agent_coverage(agent_coverage)
+	agent_reporter(agent_reporter)
+	human_validation_report(human_validation_report)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> agent_gherkin;
+	agent_coverage --> agent_reporter;
+	agent_gherkin --> human_validation_gherkin;
+	agent_gherkin_to_robot --> human_validation_robot;
+	agent_github_actions --> human_validation_github_actions;
+	agent_reporter --> human_validation_report;
+	agent_robot_framework --> human_validation_reviewed_robot;
+	human_validation_gherkin -. &nbsp;end&nbsp; .-> __end__;
+	human_validation_gherkin -.-> agent_gherkin;
+	human_validation_gherkin -.-> agent_gherkin_to_robot;
+	human_validation_github_actions -. &nbsp;end&nbsp; .-> __end__;
+	human_validation_github_actions -.-> agent_coverage;
+	human_validation_github_actions -.-> agent_github_actions;
+	human_validation_report -. &nbsp;end&nbsp; .-> __end__;
+	human_validation_report -.-> agent_reporter;
+	human_validation_reviewed_robot -. &nbsp;end&nbsp; .-> __end__;
+	human_validation_reviewed_robot -.-> agent_github_actions;
+	human_validation_reviewed_robot -.-> agent_robot_framework;
+	human_validation_robot -. &nbsp;end&nbsp; .-> __end__;
+	human_validation_robot -.-> agent_gherkin_to_robot;
+	human_validation_robot -.-> agent_robot_framework;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
