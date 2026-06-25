@@ -1,6 +1,7 @@
 *** Settings ***
 Library             Browser
-Resource            ../../kn-proxy-prs/Resources/Prihlaseni.resource
+Resource           ../../Resources/Common.resource
+
 
 Test Teardown       Close Browser    ALL
 

@@ -1,6 +1,7 @@
 *** Settings ***
 Library     Browser    timeout=00:00:30
-Resource    ../../kn-proxy-prs/Resources/Prihlaseni.resource
+Resource           ../../Resources/Common.resource
+
 
 
 *** Variables ***

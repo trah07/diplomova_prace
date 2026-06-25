@@ -1,7 +1,8 @@
 *** Settings ***
 Library     Browser
 Library     OperatingSystem
-Resource    ../../kn-proxy-prs/Resources/Prihlaseni.resource
+Resource           ../../Resources/Common.resource
+
 
 
 *** Variables ***
