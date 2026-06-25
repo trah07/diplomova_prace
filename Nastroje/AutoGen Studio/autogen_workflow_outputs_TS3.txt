@@ -67,7 +67,7 @@ And k pokusu o stažení souboru nedojde
 Předkládám ke schválení. Prosím o vyjádření (OK / NEOK).
 
 ================================================================================
-Agent_GherkinToRobot
+AGENT_GHERKINTOROBOT
 ================================================================================
 
 Zde je automatický převod schváleného Gherkin scénáře do Robot Frameworku s využitím knihovny Browser.
