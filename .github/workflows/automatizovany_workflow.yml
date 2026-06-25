@@ -1,0 +1,31 @@
+name: Knproxy_AutoGen_Studio_PRS
+
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+jobs:
+  rf_runner:
+    name: RF Runner
+    runs-on: csas-linux-coet
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Robot Framework
+        id: RF_Prepare
+        uses: csas-actions/robotframework-install@v1
+
+      - name: Run Robot Framework tests
+        id: RF_Run
+        uses: csas-actions/robotframework-run@v1
+        with:
+          inputdir: "./Tests/Rucne_automatizovany/*.robot"
+
+      - name: Generate RF Summary
+        if: success() || failure()
+        id: RF_Summary
+        uses: csas-actions/robotframework-summary@v1
+        with:
+          results_dir: "Results"
